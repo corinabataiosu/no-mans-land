@@ -41,6 +41,8 @@
     // webgl renderer with antialias for smoother edges
     const renderer = new THREE.WebGLRenderer({ antialias: true });
     renderer.setSize(window.innerWidth, window.innerHeight);
+    renderer.shadowMap.enabled = true; // enable shadows
+    renderer.shadowMap.type = THREE.PCFSoftShadowMap; // smoother edges for the shadows
     document.body.appendChild(renderer.domElement);
 
     // orbit controls for rotation and zooming
@@ -85,6 +87,16 @@
     // orangey directional light to give a dawn atmosphere
     const sun = new THREE.DirectionalLight(0xffccaa, 1.0);
     sun.position.set(-200, 300, 200);
+
+    sun.castShadow = true;
+    sun.shadow.mapSize.width = 2048;
+    sun.shadow.mapSize.height = 2048;
+    sun.shadow.camera.left = -1000;
+    sun.shadow.camera.right = 1000;
+    sun.shadow.camera.top = 1000;
+    sun.shadow.camera.bottom = -1000;
+    sun.shadow.camera.far = 3000;
+
     scene.add(sun);
 
     // skybox
@@ -121,6 +133,7 @@
     // rotate plane -90 degrees on X axis to lay flat on the ground
     const floor = new THREE.Mesh(floorGeo, sandMaterial);
     floor.rotation.x = -Math.PI / 2;
+    floor.receiveShadow = true;
     scene.add(floor);
 
     // methods
@@ -180,6 +193,8 @@
         const mat = new THREE.MeshPhongMaterial({ map: texRock, flatShading: true, shininess: 0 });
         const cliff = new THREE.Mesh(geo, mat);
         cliff.position.set(cx, -1, cz);
+        cliff.castShadow = true; // cast shadows
+        cliff.receiveShadow = true; // receive shadows
         scene.add(cliff);
     }
 
@@ -221,6 +236,8 @@
         const rock = new THREE.Mesh(geo, mat);
         rock.position.set(cx, -1, cz);
         rock.rotation.y = Math.random() * Math.PI; // random rotation for asymmetry
+        rock.castShadow = true;
+        rock.receiveShadow = true;
         scene.add(rock);
     }
 
@@ -247,6 +264,8 @@
         const mesh = new THREE.Mesh(geo, sandMaterial);
         mesh.position.set(cx, 0.2, cz);
         mesh.rotation.x = -Math.PI / 2;
+        mesh.castShadow = true;
+        mesh.receiveShadow = true;
         scene.add(mesh);
     }
 
@@ -255,6 +274,8 @@
     function createBuilding(x, z, height) {
         const b = new THREE.Mesh(new THREE.BoxGeometry(80, height, 80), new THREE.MeshPhongMaterial({ map: texWall, color: 0xfff2cc }));
         b.position.set(x, height / 2, z);
+        b.castShadow = true;
+        b.receiveShadow = true;
         scene.add(b);
     }
 
@@ -266,6 +287,8 @@
         const mat = new THREE.MeshPhongMaterial({ map: texWood, color: 0x80664d });
         const v = new THREE.Mesh(new THREE.BoxGeometry(2, 15, 2), mat); v.position.y = 7.5;
         const h = new THREE.Mesh(new THREE.BoxGeometry(8, 2, 2), mat); h.position.y = 10;
+        v.castShadow = true; v.receiveShadow = true;
+        h.castShadow = true; h.receiveShadow = true;
         group.add(v, h); group.position.set(x, 1, z); group.rotation.y = rot * (Math.PI / 180);
         scene.add(group);
     }
@@ -296,6 +319,7 @@
         const mat = new THREE.MeshPhongMaterial({ color: 0xffffff, map: texTrack, side: THREE.DoubleSide });
         const track = new THREE.Mesh(geo, mat);
         track.position.set(cx, 0.5, cz);
+        track.receiveShadow = true;
         scene.add(track);
     }
 
