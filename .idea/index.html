@@ -138,6 +138,7 @@
 
     let spherePlayer;
     const sphereSpeed = 8;
+    const buildingColliders = [];
 
     // methods
 
@@ -280,6 +281,10 @@
         b.castShadow = true;
         b.receiveShadow = true;
         scene.add(b);
+
+        b.updateMatrixWorld();
+        const bbox = new THREE.Box3().setFromObject(b); // create a box the same size as building
+        buildingColliders.push(bbox);
     }
 
     // creates a grave consisting of a small dune plus a cross
@@ -463,14 +468,36 @@
         if (keys['e']) { camera.position.y += speed; controls.target.y += speed; }
     }
 
+    function checkCollisions() {
+        // create a sphere on the player so we detect collision
+        const playerCollider = new THREE.Sphere(spherePlayer.position, 10);
+
+        // check if the sphere touches the box
+        for (let i = 0; i < buildingColliders.length; i++) {
+            if (buildingColliders[i].intersectsSphere(playerCollider)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
     // player control
     function handlePlayerMovement() {
         if (!spherePlayer) return;
 
+        const oldX = spherePlayer.position.x;
+        const oldZ = spherePlayer.position.z;
+
         if (keys['arrowup']) { spherePlayer.position.z -= sphereSpeed; }
         if (keys['arrowdown']) { spherePlayer.position.z += sphereSpeed; }
+        if (checkCollisions()) {
+            spherePlayer.position.z = oldZ; // if collision, undo movement on x axis
+        }
         if (keys['arrowleft']) { spherePlayer.position.x -= sphereSpeed; }
         if (keys['arrowright']) { spherePlayer.position.x += sphereSpeed; }
+        if (checkCollisions()) {
+            spherePlayer.position.x = oldX; // if collision, undo movement on z axis
+        }
 
         // limit the movement so it cant leave the plane
         const limit = 990; // 1000 - 10 (radius)
