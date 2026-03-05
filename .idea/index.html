@@ -24,6 +24,7 @@
 <script type="module">
     // import three.js library
     import * as THREE from 'three';
+    import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 
     // main scene container
     const scene = new THREE.Scene();
@@ -42,7 +43,10 @@
     renderer.setSize(window.innerWidth, window.innerHeight);
     document.body.appendChild(renderer.domElement);
 
-    camera.lookAt(0, 80, 0);
+    // orbit controls for rotation and zooming
+    // damping for inertia when we stop moving
+    const controls = new OrbitControls(camera, renderer.domElement);
+    controls.enableDamping = true;
 
     // texture loader used for the images stored in 'textures/'
     const loader = new THREE.TextureLoader();
@@ -323,9 +327,36 @@
         }
     }
 
+    // movements
+    const keys = {};
+    window.addEventListener('keydown', (e) => keys[e.key.toLowerCase()] = true);
+    window.addEventListener('keyup', (e) => keys[e.key.toLowerCase()] = false);
+
+    // w and s - move forward and backward
+    // a and d - move left and right
+    // q and e - move up and down
+    function handleMovement() {
+        const speed = 15;
+        const forward = new THREE.Vector3();
+        camera.getWorldDirection(forward);
+        forward.y = 0;
+        forward.normalize();
+        const right = new THREE.Vector3().crossVectors(forward, camera.up);
+
+        if (keys['w']) { camera.position.addScaledVector(forward, speed); controls.target.addScaledVector(forward, speed); }
+        if (keys['s']) { camera.position.addScaledVector(forward, -speed); controls.target.addScaledVector(forward, -speed); }
+        if (keys['a']) { camera.position.addScaledVector(right, -speed); controls.target.addScaledVector(right, -speed); }
+        if (keys['d']) { camera.position.addScaledVector(right, speed); controls.target.addScaledVector(right, speed); }
+        if (keys['q']) { camera.position.y -= speed; controls.target.y -= speed; }
+        if (keys['e']) { camera.position.y += speed; controls.target.y += speed; }
+    }
+
     // main render loop called every frame via requestanimationframe
+    // processes keyboard input, updates orbit controls damping, then renders the scene
     function animate() {
         requestAnimationFrame(animate);
+        handleMovement();
+        controls.update();
         renderer.render(scene, camera);
     }
     animate();
