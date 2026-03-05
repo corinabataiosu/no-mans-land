@@ -136,6 +136,9 @@
     floor.receiveShadow = true;
     scene.add(floor);
 
+    let spherePlayer;
+    const sphereSpeed = 8;
+
     // methods
 
     // creates a cliff alongside one of the sides
@@ -370,6 +373,22 @@
         scene.add(group);
     }
 
+    function createSphere() {
+        const geo = new THREE.SphereGeometry(10, 32, 16);
+
+        const mat = new THREE.MeshPhongMaterial({ color: 0x650015, shininess: 30 });
+
+        spherePlayer = new THREE.Mesh(geo, mat);
+        spherePlayer.castShadow = true;
+        spherePlayer.receiveShadow = true;
+
+        // Y = 10 so its all the way on the ground
+        // Z = 500 next to town
+        spherePlayer.position.set(0, 10, 500);
+
+        scene.add(spherePlayer);
+    }
+
     // initialization
 
     // createCliff(center_x, center_z, width, length, maxHeight)
@@ -418,6 +437,8 @@
         }
     }
 
+    createSphere();
+
     // movements
     const keys = {};
     window.addEventListener('keydown', (e) => keys[e.key.toLowerCase()] = true);
@@ -442,11 +463,27 @@
         if (keys['e']) { camera.position.y += speed; controls.target.y += speed; }
     }
 
+    // player control
+    function handlePlayerMovement() {
+        if (!spherePlayer) return;
+
+        if (keys['arrowup']) { spherePlayer.position.z -= sphereSpeed; }
+        if (keys['arrowdown']) { spherePlayer.position.z += sphereSpeed; }
+        if (keys['arrowleft']) { spherePlayer.position.x -= sphereSpeed; }
+        if (keys['arrowright']) { spherePlayer.position.x += sphereSpeed; }
+
+        // limit the movement so it cant leave the plane
+        const limit = 990; // 1000 - 10 (radius)
+        spherePlayer.position.x = THREE.MathUtils.clamp(spherePlayer.position.x, -limit, limit);
+        spherePlayer.position.z = THREE.MathUtils.clamp(spherePlayer.position.z, -limit, limit);
+    }
+
     // main render loop called every frame via requestanimationframe
     // processes keyboard input, updates orbit controls damping, then renders the scene
     function animate() {
         requestAnimationFrame(animate);
         handleMovement();
+        handlePlayerMovement();
         controls.update();
         renderer.render(scene, camera);
     }
