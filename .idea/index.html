@@ -55,6 +55,9 @@
     const texRock = loader.load(texPath + 'rock.jpg');
     texRock.wrapS = texRock.wrapT = THREE.RepeatWrapping;
 
+    const texWall = loader.load(texPath + 'wall.jpg');
+    const texWood = loader.load(texPath + 'wood.jpg');
+
     // helper function that mirrors the skybox side texture horizontally
     function loadFixedSkyTexture(path) {
         const tex = loader.load(texPath + path);
@@ -240,6 +243,14 @@
         scene.add(mesh);
     }
 
+    // creates a simple rectangular building
+    // the box is raised by half its height so its base sits exactly on y = 0
+    function createBuilding(x, z, height) {
+        const b = new THREE.Mesh(new THREE.BoxGeometry(80, height, 80), new THREE.MeshPhongMaterial({ map: texWall, color: 0xfff2cc }));
+        b.position.set(x, height / 2, z);
+        scene.add(b);
+    }
+
     // initialization
 
     // createCliff(center_x, center_z, width, length, maxHeight)
@@ -254,6 +265,9 @@
     createDune(-350, 250, 300, 10);
     createDune(200, -150, 450, 40);
     createDune(300, 400, 350, 30);
+
+    const houseCoords = [[380,380],[510,350],[650,380],[420,500],[550,470],[680,510],[460,620],[600,600],[730,630],[780,450],[500,750],[650,720],[800,780],[580,850],[720,830]];
+    houseCoords.forEach((c, i) => createBuilding(c[0] - 200, c[1] - 150, i % 2 === 0 ? 120 : 150));
 
     // main render loop called every frame via requestanimationframe
     function animate() {
