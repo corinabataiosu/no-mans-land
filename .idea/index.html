@@ -139,6 +139,7 @@
     let spherePlayer;
     const sphereSpeed = 8;
     const buildingColliders = [];
+    const lizards = [];
 
     // methods
 
@@ -394,6 +395,31 @@
         scene.add(spherePlayer);
     }
 
+    function createLizard(startX, startZ) {
+        // width 4, height 2, lenth 12
+        const geo = new THREE.BoxGeometry(4, 2, 12);
+        const mat = new THREE.MeshPhongMaterial({ color: 0x004d00, shininess: 10 });
+
+        const lizardMesh = new THREE.Mesh(geo, mat);
+
+        // position it on sand
+        lizardMesh.position.set(startX, 1, startZ);
+        lizardMesh.castShadow = true;
+        lizardMesh.receiveShadow = true;
+
+        // random direction
+        lizardMesh.rotation.y = Math.random() * Math.PI * 2;
+
+        scene.add(lizardMesh);
+
+        // save it inside an object with a timer for changing direction
+        lizards.push({
+            mesh: lizardMesh,
+            speed: 1.5 + Math.random() * 2, // Viteză între 1.5 și 3.5
+            changeDirectionTimer: Math.random() * 100 // when to change direction
+        });
+    }
+
     // initialization
 
     // createCliff(center_x, center_z, width, length, maxHeight)
@@ -440,6 +466,13 @@
         for(let j=0; j<6; j++) {
             createGrave(-400 + j * 60 + (i % 2) * 15, -250 + i * 50, (i * 7 + j * 13) % 11);
         }
+    }
+
+    for(let i = 0; i < 10; i++) {
+        // random coordinates from -600 to +600
+        const rx = (Math.random() - 0.5) * 1200;
+        const rz = (Math.random() - 0.5) * 1200;
+        createLizard(rx, rz);
     }
 
     createSphere();
@@ -505,12 +538,41 @@
         spherePlayer.position.z = THREE.MathUtils.clamp(spherePlayer.position.z, -limit, limit);
     }
 
+    function updateLizards() {
+        lizards.forEach(lizard => {
+            // update timer and when it comes to 0, change direction
+            lizard.changeDirectionTimer--;
+            if (lizard.changeDirectionTimer <= 0) {
+                // random angle when changing direction
+                const randomTurn = (Math.random() - 0.5) * Math.PI / 2;
+                lizard.mesh.rotation.y += randomTurn;
+
+                // reset timer something between 30 and 130
+                lizard.changeDirectionTimer = 30 + Math.random() * 100;
+            }
+
+            // moving ahead based on current rotation
+            const angle = lizard.mesh.rotation.y;
+            lizard.mesh.position.x += Math.sin(angle) * lizard.speed;
+            lizard.mesh.position.z += Math.cos(angle) * lizard.speed;
+
+            // dont let them go outside plane
+            const limit = 950;
+            if (lizard.mesh.position.x > limit || lizard.mesh.position.x < -limit ||
+                lizard.mesh.position.z > limit || lizard.mesh.position.z < -limit) {
+                // when ariving at end of plane, change direction by 180 degrees
+                lizard.mesh.rotation.y += Math.PI;
+            }
+        });
+    }
+
     // main render loop called every frame via requestanimationframe
     // processes keyboard input, updates orbit controls damping, then renders the scene
     function animate() {
         requestAnimationFrame(animate);
         handleMovement();
         handlePlayerMovement();
+        updateLizards();
         controls.update();
         renderer.render(scene, camera);
     }
