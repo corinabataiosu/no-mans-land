@@ -58,6 +58,9 @@
     const texWall = loader.load(texPath + 'wall.jpg');
     const texWood = loader.load(texPath + 'wood.jpg');
 
+    const texTrack = loader.load(texPath + 'track.jpg');
+    texTrack.wrapS = texTrack.wrapT = THREE.RepeatWrapping;
+
     // helper function that mirrors the skybox side texture horizontally
     function loadFixedSkyTexture(path) {
         const tex = loader.load(texPath + path);
@@ -251,6 +254,47 @@
         scene.add(b);
     }
 
+    // creates a grave consisting of a small dune plus a cross
+    // the cross is made of two box geometries: a vertical and a horizontal beam
+    function createGrave(x, z, rot) {
+        createDune(x, z, 20, 6);
+        const group = new THREE.Group();
+        const mat = new THREE.MeshPhongMaterial({ map: texWood, color: 0x80664d });
+        const v = new THREE.Mesh(new THREE.BoxGeometry(2, 15, 2), mat); v.position.y = 7.5;
+        const h = new THREE.Mesh(new THREE.BoxGeometry(8, 2, 2), mat); h.position.y = 10;
+        group.add(v, h); group.position.set(x, 1, z); group.rotation.y = rot * (Math.PI / 180);
+        scene.add(group);
+    }
+
+        // creates a rectangular track using shape geometry
+    function createTrack(cx, cz, lengthX, widthZ, trackWidth) {
+        const shape = new THREE.Shape();
+
+        // rectangle
+        const hw = lengthX / 2;
+        const hl = widthZ / 2;
+        shape.moveTo(-hw, -hl); shape.lineTo(hw, -hl); shape.lineTo(hw, hl); shape.lineTo(-hw, hl); shape.lineTo(-hw, -hl);
+
+        // hole inside
+        const hole = new THREE.Path();
+        const in_hw = hw - trackWidth;
+        const in_hl = hl - trackWidth;
+        hole.moveTo(-in_hw, -in_hl); hole.lineTo(in_hw, -in_hl); hole.lineTo(in_hw, in_hl); hole.lineTo(-in_hw, in_hl); hole.lineTo(-in_hw, -in_hl);
+        shape.holes.push(hole);
+
+        const geo = new THREE.ShapeGeometry(shape);
+        geo.rotateX(-Math.PI / 2);
+
+        const pos = geo.attributes.position;
+        const uv = geo.attributes.uv;
+        for (let i = 0; i < pos.count; i++) uv.setXY(i, pos.getX(i) / 50, -pos.getZ(i) / 50);
+
+        const mat = new THREE.MeshPhongMaterial({ color: 0xffffff, map: texTrack, side: THREE.DoubleSide });
+        const track = new THREE.Mesh(geo, mat);
+        track.position.set(cx, 0.5, cz);
+        scene.add(track);
+    }
+
     // initialization
 
     // createCliff(center_x, center_z, width, length, maxHeight)
@@ -268,6 +312,16 @@
 
     const houseCoords = [[380,380],[510,350],[650,380],[420,500],[550,470],[680,510],[460,620],[600,600],[730,630],[780,450],[500,750],[650,720],[800,780],[580,850],[720,830]];
     houseCoords.forEach((c, i) => createBuilding(c[0] - 200, c[1] - 150, i % 2 === 0 ? 120 : 150));
+
+    // createTrack(center_x, center_z, innerRadius, outerRadius)
+    createTrack(300, 400, 900, 900, 80);
+
+    // createGrave(center_x, center_z, rotation)
+    for(let i=0; i<5; i++) {
+        for(let j=0; j<6; j++) {
+            createGrave(-400 + j * 60 + (i % 2) * 15, -250 + i * 50, (i * 7 + j * 13) % 11);
+        }
+    }
 
     // main render loop called every frame via requestanimationframe
     function animate() {
