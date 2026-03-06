@@ -25,6 +25,8 @@
     // import three.js library
     import * as THREE from 'three';
     import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+    import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
+    import { DRACOLoader } from 'three/addons/loaders/DRACOLoader.js';
 
     // main scene container
     const scene = new THREE.Scene();
@@ -140,6 +142,8 @@
     const sphereSpeed = 8;
     const buildingColliders = [];
     const lizards = [];
+    let ufo;
+    let ufoTime = 0;
 
     // methods
 
@@ -420,6 +424,39 @@
         });
     }
 
+    function createUFO() {
+
+        const gltfLoader = new GLTFLoader();
+        const dracoLoader = new DRACOLoader();
+
+        dracoLoader.setDecoderPath('https://unpkg.com/three@0.160.0/examples/jsm/libs/draco/gltf/');
+        gltfLoader.setDRACOLoader(dracoLoader);
+
+        gltfLoader.load('juno.glb', (gltf) => {
+            const model = gltf.scene;
+
+            const box = new THREE.Box3().setFromObject(model);
+            const center = box.getCenter(new THREE.Vector3());
+            model.position.sub(center);
+
+            model.scale.set(6, 6, 6);
+
+            // casting shadow for every piece of the model
+            model.traverse((child) => {
+                if (child.isMesh) {
+                    child.castShadow = true;
+                    child.receiveShadow = true;
+                }
+            });
+
+            ufo = new THREE.Group();
+            ufo.add(model);
+            scene.add(ufo);
+        }, undefined, (error) => {
+            console.error('Error loading the glb model for ozn:', error);
+        });
+    }
+
     // initialization
 
     // createCliff(center_x, center_z, width, length, maxHeight)
@@ -474,6 +511,8 @@
         const rz = (Math.random() - 0.5) * 1200;
         createLizard(rx, rz);
     }
+
+    createUFO();
 
     createSphere();
 
@@ -566,6 +605,44 @@
         });
     }
 
+    function updateUFO() {
+        if (!ufo) return;
+
+        // speed of the ozn
+        const ufoSpeed = 4;
+        ufoTime += ufoSpeed;
+        const distance = ufoTime % 3600;
+
+        let newX, newZ;
+
+        // where on the 4 sides of the track we are
+        if (distance < 900) {
+            // (Z = -50), go right
+            newX = -150 + distance;
+            newZ = -50;
+        } else if (distance < 1800) {
+            // (X = 750), go down
+            newX = 750;
+            newZ = -50 + (distance - 900);
+        } else if (distance < 2700) {
+            // (Z = 850), go left
+            newX = 750 - (distance - 1800);
+            newZ = 850;
+        } else {
+            // (X = -150), go up
+            newX = -150;
+            newZ = 850 - (distance - 2700);
+        }
+
+        // "floating" on the Y axis
+        const newY = 250 + Math.sin(ufoTime * 0.02) * 20;
+
+        ufo.position.set(newX, newY, newZ);
+
+        // rotate on the Y axis
+        ufo.rotation.y -= 0.02;
+    }
+
     // main render loop called every frame via requestanimationframe
     // processes keyboard input, updates orbit controls damping, then renders the scene
     function animate() {
@@ -573,6 +650,7 @@
         handleMovement();
         handlePlayerMovement();
         updateLizards();
+        updateUFO();
         controls.update();
         renderer.render(scene, camera);
     }
