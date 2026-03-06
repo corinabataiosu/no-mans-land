@@ -396,20 +396,40 @@
         scene.add(group);
     }
 
-    function createSphere() {
-        const geo = new THREE.SphereGeometry(10, 32, 16);
-
-        const mat = new THREE.MeshPhongMaterial({ color: 0x650015, shininess: 30 });
-
-        spherePlayer = new THREE.Mesh(geo, mat);
-        spherePlayer.castShadow = true;
-        spherePlayer.receiveShadow = true;
-
-        // Y = 10 so its all the way on the ground
+    function createPlayer() {
+        spherePlayer = new THREE.Group();
+        // Y = 5 so its all the way on the ground
         // Z = 500 next to town
-        spherePlayer.position.set(0, 10, 500);
-
+        spherePlayer.position.set(0, 5, 500);
         scene.add(spherePlayer);
+
+        const gltfLoader = new GLTFLoader();
+        const dracoLoader = new DRACOLoader();
+
+        dracoLoader.setDecoderPath('https://unpkg.com/three@0.160.0/examples/jsm/libs/draco/gltf/');
+        gltfLoader.setDRACOLoader(dracoLoader);
+
+        gltfLoader.load('vikinglander.glb', (gltf) => {
+            const model = gltf.scene;
+
+            // centering the model
+            const box = new THREE.Box3().setFromObject(model);
+            const center = box.getCenter(new THREE.Vector3());
+            model.position.sub(center);
+
+            model.scale.set(5, 5, 5);
+
+            model.traverse((child) => {
+                if (child.isMesh) {
+                    child.castShadow = true;
+                    child.receiveShadow = true;
+                }
+            });
+
+            spherePlayer.add(model);
+        }, undefined, (error) => {
+            console.error('Error loading player glb model:', error);
+        });
     }
 
     function createLizard(startX, startZ) {
@@ -432,7 +452,7 @@
         // save it inside an object with a timer for changing direction
         lizards.push({
             mesh: lizardMesh,
-            speed: 1.5 + Math.random() * 2, // Viteză între 1.5 și 3.5
+            speed: 1.5 + Math.random() * 2, // speed between 1.5 and 3.5
             changeDirectionTimer: Math.random() * 100 // when to change direction
         });
     }
@@ -527,7 +547,7 @@
 
     createUFO();
 
-    createSphere();
+    createPlayer();
 
     // movements
     const keys = {};
@@ -555,7 +575,7 @@
 
     function checkCollisions() {
         // create a sphere on the player so we detect collision
-        const playerCollider = new THREE.Sphere(spherePlayer.position, 10);
+        const playerCollider = new THREE.Sphere(spherePlayer.position, 40);
 
         // check if the sphere touches the box
         for (let i = 0; i < buildingColliders.length; i++) {
