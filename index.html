@@ -205,6 +205,10 @@
         cliff.castShadow = true; // cast shadows
         cliff.receiveShadow = true; // receive shadows
         scene.add(cliff);
+
+        cliff.updateMatrixWorld();
+        const bbox = new THREE.Box3().setFromObject(cliff); // invisible box over cliff
+        buildingColliders.push(bbox);
     }
 
     // creates a standalone boulder in a circular shape
@@ -248,6 +252,15 @@
         rock.castShadow = true;
         rock.receiveShadow = true;
         scene.add(rock);
+
+        rock.updateMatrixWorld();
+        const rockBox = new THREE.Box3().setFromObject(rock);
+
+        const marginRock = size * 0.15;
+        rockBox.min.x += marginRock; rockBox.max.x -= marginRock;
+        rockBox.min.z += marginRock; rockBox.max.z -= marginRock;
+
+        buildingColliders.push(rockBox);
     }
 
     // creates a sand dune
@@ -339,7 +352,7 @@
     function createStreetLight(x, z) {
         const group = new THREE.Group();
 
-        // metal part of the street light
+        // metal part of the streetlight
         const postGeo = new THREE.CylinderGeometry(2, 2, 80, 8);
         const postMat = new THREE.MeshPhongMaterial({ color: 0x222222 });
         const post = new THREE.Mesh(postGeo, postMat);
