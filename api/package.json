@@ -1,0 +1,9 @@
+{
+  "name": "nomansland-telemetry-api",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Isolated telemetry endpoint for No Man's Land",
+  "engines": {
+    "node": "22.x"
+  }
+}

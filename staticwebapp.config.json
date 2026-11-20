@@ -1,0 +1,25 @@
+{
+  "mimeTypes": {
+    ".glb": "model/gltf-binary"
+  },
+  "routes": [
+    {
+      "route": "/textures/*",
+      "headers": {
+        "Cache-Control": "public, max-age=604800"
+      }
+    },
+    {
+      "route": "/*.glb",
+      "headers": {
+        "Cache-Control": "public, max-age=604800"
+      }
+    }
+  ],
+  "globalHeaders": {
+    "X-Content-Type-Options": "nosniff"
+  },
+  "platform": {
+    "apiRuntime": "node:22"
+  }
+}
